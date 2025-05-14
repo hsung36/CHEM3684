@@ -22,12 +22,16 @@ Currently, you can install this package directly from the GitHub repository:
 
 ```bash
 pip install git+[https://github.com/hsung36/CHEM3684.git](https://github.com/hsung36/CHEM3684.git)
+```
 
 
 For developers, to install in editable mode (allowing you to modify the code and see changes immediately):
+
+```bash
 git clone [https://github.com/hsung36/CHEM3684.git](https://github.com/hsung36/CHEM3684.git)
 cd CHEM3684
 pip install -e .
+```
 
 
 Basic Usage
