@@ -1,9 +1,8 @@
 import numpy as np
 import random
-import copy as cp # 'copy' is imported but not used in the provided snippet.
-                  # If it's used elsewhere in the class, keep it. Otherwise, it can be removed.
-from .bitstring import BitString # Assuming bitstring.py is in the same directory or package
-from .ising_hamiltonian import IsingHamiltonian # Assuming this is the correct import for ham
+import copy as cp
+from .bitstring import BitString
+from .ising import IsingHamiltonian
 
 class MonteCarlo:
     """

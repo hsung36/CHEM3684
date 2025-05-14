@@ -1,7 +1,7 @@
 import numpy as np
 import networkx as nx
 from typing import Union
-from .bitstring import BitString # Assuming bitstring.py is in the same directory
+from .bitstring import BitString
 
 class IsingHamiltonian:
     """
