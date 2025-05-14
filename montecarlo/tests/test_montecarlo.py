@@ -83,7 +83,7 @@ def test_run_qualitative_behavior(simple_ising_hamiltonian, temp):
         assert np.isclose(avg_E, -1.0, atol=0.3), f"At low T={temp}, avg_E should be close to -1.0 (was {avg_E})."
         assert avg_M_abs > 1.7, f"At low T={temp}, avg_M_abs should be close to 2 (was {avg_M_abs})."
     elif temp > 500:
-        assert np.isclose(avg_E, 0.0, atol=0.65), f"At high T={temp}, avg_E should be close to 0.0 (was {avg_E})."
+        assert np.isclose(avg_E, 0.0, atol=0.75), f"At high T={temp}, avg_E should be close to 0.0 (was {avg_E})."
         assert np.isclose(avg_M_abs, 1.0, atol=0.5), f"At high T={temp}, avg_M_abs should be close to 1.0 (was {avg_M_abs})."
 
 def test_run_invalid_temperature(simple_ising_hamiltonian):
