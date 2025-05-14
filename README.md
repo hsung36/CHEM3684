@@ -36,6 +36,7 @@ pip install -e .
 
 Basic Usage
 Here's a quick example of how to use the montecarlo components within the CHEM3684 package:
+
 # Import necessary classes
 from montecarlo.ising import IsingHamiltonian
 from montecarlo.montecarlo import MonteCarlo
@@ -44,21 +45,21 @@ import networkx as nx
 import numpy as np
 
 # 1. Define a graph (e.g., a 1D chain or a 2D grid)
-# For a 1D chain of 5 sites:
+For a 1D chain of 5 sites:
 graph = nx.path_graph(5)
-# For a 2x2 grid:
-# graph = nx.grid_2d_graph(2, 2)
+For a 2x2 grid:
+graph = nx.grid_2d_graph(2, 2)
 
-# Example: Set ferromagnetic interaction J_ij = 1 for all edges
+Example: Set ferromagnetic interaction J_ij = 1 for all edges
 for u, v in graph.edges():
     graph.edges[u,v]['weight'] = 1.0
 
 # 2. Initialize the Ising Hamiltonian
 ising_system = IsingHamiltonian(G=graph)
 
-# Optionally, set external magnetic fields (mu_i)
-# mus = np.random.uniform(-0.5, 0.5, size=ising_system.N) # Example random fields
-# ising_system.set_mu(mus)
+Optionally, set external magnetic fields (mu_i)
+mus = np.random.uniform(-0.5, 0.5, size=ising_system.N) # Example random fields
+ising_system.set_mu(mus)
 
 # 3. Initialize the Monte Carlo simulator
 mc_simulator = MonteCarlo(ham=ising_system)
@@ -90,9 +91,9 @@ if ising_system.N <= 10: # Adjust N threshold as needed
 Running Tests
     To run the tests, navigate to the root directory of the CHEM3684 project and execute:
     pytest
-
-
     To include a coverage report:
+
+
     pytest --cov=CHEM3684.montecarlo --cov-report=html
 
 
