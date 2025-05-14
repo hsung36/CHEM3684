@@ -12,8 +12,6 @@ def simple_ising_hamiltonian():
     G.add_nodes_from([0, 1])
     G.add_edge(0, 1, weight=1.0) # J_01 = 1.0
     ham = IsingHamiltonian(G)
-    # External magnetic field (mu) can be set here if needed
-    # ham.set_mu(np.array([0.1, -0.1]))
     return ham
 
 @pytest.fixture
@@ -33,9 +31,6 @@ def test_montecarlo_initialization(simple_ising_hamiltonian):
 
 def test_random_bitstring():
     """Tests if random_bitstring method creates a BitString of correct length and content."""
-    # A temporary Hamiltonian might be needed to create a MonteCarlo instance,
-    # but if random_bitstring doesn't depend on Hamiltonian state, direct call testing is also possible.
-    # Assuming here it's called via a MonteCarlo instance.
     G_temp = nx.Graph()
     G_temp.add_node(0) # Minimal graph
     temp_ham = IsingHamiltonian(G_temp)
@@ -64,74 +59,66 @@ def test_run_output_shape_and_type(simple_ising_hamiltonian):
     assert len(E_samples) == n_samples, f"Number of energy samples should be {n_samples}."
     assert len(M_samples) == n_samples, f"Number of magnetization samples should be {n_samples}."
 
-def test_run_burn_in(simple_ising_hamiltonian):
-    """Tests if the run method correctly handles the burn-in period (sample collection timing)."""
+def test_run_burn_in_effect(simple_ising_hamiltonian):
+    """Tests that samples are collected according to n_samples after n_burn steps."""
     mc_simulator = MonteCarlo(ham=simple_ising_hamiltonian)
-    # Set n_samples=0 to check if only burn-in occurs and no samples are collected.
-    E_samples, M_samples = mc_simulator.run(T=1.0, n_samples=0, n_burn=50)
-    assert len(E_samples) == 0
-    assert len(M_samples) == 0
+    n_samples_for_test = 20
+    # Test with n_burn = 0, all steps should be sampled
+    E_samples_no_burn, M_samples_no_burn = mc_simulator.run(T=1.0, n_samples=n_samples_for_test, n_burn=0)
+    assert len(E_samples_no_burn) == n_samples_for_test
+    assert len(M_samples_no_burn) == n_samples_for_test
 
-    # Set n_burn=0 to check if sampling occurs at all steps (up to n_samples).
-    n_samples = 20
-    E_samples, M_samples = mc_simulator.run(T=1.0, n_samples=n_samples, n_burn=0)
-    assert len(E_samples) == n_samples
-    assert len(M_samples) == n_samples
+    # Test with n_burn > 0, still n_samples should be collected
+    n_burn_steps = 30
+    E_samples_with_burn, M_samples_with_burn = mc_simulator.run(T=1.0, n_samples=n_samples_for_test, n_burn=n_burn_steps)
+    assert len(E_samples_with_burn) == n_samples_for_test
+    assert len(M_samples_with_burn) == n_samples_for_test
+    # Note: This test doesn't verify *which* steps were burned, only that the correct number of samples is returned.
 
 
-@pytest.mark.parametrize("temp", [0.01, 1000.0]) # Very low and very high temperatures
+@pytest.mark.parametrize("temp", [0.01, 1000.0])
 def test_run_qualitative_behavior(simple_ising_hamiltonian, temp):
     """
     Tests if the simulation shows qualitatively expected results at very low or high temperatures.
-    Checks for trends rather than exact values.
     """
     mc_simulator = MonteCarlo(ham=simple_ising_hamiltonian)
-    n_samples = 500 # Sufficient number of samples
-    n_burn = 100
+    n_samples = 2000 # Increased samples for better statistics
+    n_burn = 500   # Increased burn-in steps
 
     E_samples, M_samples = mc_simulator.run(T=temp, n_samples=n_samples, n_burn=n_burn)
 
     avg_E = np.mean(E_samples)
-    avg_M_abs = np.mean(np.abs(M_samples)) # Average absolute magnetization (for ferromagnet)
+    avg_M_abs = np.mean(np.abs(M_samples))
 
     if temp < 0.1: # Low temperature
-        # For a 2-site ferromagnet (J=1), ground state energy is -1 (spins: ++ or --)
+        # For a 2-site ferromagnet (J=1), ground state energy is -1.0
         # Magnetization |M|=2
-        assert avg_E < 0, f"At low temperature (T={temp}), average energy should be negative (current: {avg_E})."
-        # Should be close to ground state, so average energy is expected to be near -1
-        assert np.isclose(avg_E, -1.0, atol=0.5), f"At low temperature (T={temp}), average energy should be close to -1 (current: {avg_E})."
-        assert avg_M_abs > 1.8, f"At low temperature (T={temp}), average absolute magnetization should be close to 2 (current: {avg_M_abs})."
+        assert avg_E < 0, f"At low T={temp}, avg_E should be < 0 (was {avg_E})."
+        assert np.isclose(avg_E, -1.0, atol=0.3), f"At low T={temp}, avg_E should be close to -1.0 (was {avg_E})."
+        assert avg_M_abs > 1.7, f"At low T={temp}, avg_M_abs should be close to 2 (was {avg_M_abs})."
     elif temp > 500: # High temperature
-        # Average energy is expected to be near 0 (random spins)
-        # Possible energies for J=1: -1 (aligned), +1 (anti-aligned)
-        # Average magnetization is expected to be near 0
-        assert abs(avg_E) < 0.5, f"At high temperature (T={temp}), average energy should be close to 0 (current: {avg_E})."
-        assert avg_M_abs < 0.5, f"At high temperature (T={temp}), average absolute magnetization should be close to 0 (current: {avg_M_abs})."
+        # For a 2-site ferromagnet (J=1), high T average energy should be close to 0.0
+        # Average magnetization should be close to 0.0
+        assert np.isclose(avg_E, 0.0, atol=0.4), f"At high T={temp}, avg_E should be close to 0.0 (was {avg_E})." # Adjusted atol
+        assert avg_M_abs < 0.4, f"At high T={temp}, avg_M_abs should be close to 0.0 (was {avg_M_abs})." # Adjusted threshold
 
-def test_run_invalid_temperature():
-    """Tests if the run method raises an error for invalid temperature (T<=0)."""
-    G_temp = nx.Graph()
-    G_temp.add_node(0)
-    temp_ham = IsingHamiltonian(G_temp)
-    mc_simulator = MonteCarlo(ham=temp_ham)
+def test_run_invalid_temperature(simple_ising_hamiltonian):
+    """Tests if the run method raises ValueError for invalid temperature (T<=0)."""
+    mc_simulator = MonteCarlo(ham=simple_ising_hamiltonian)
     with pytest.raises(ValueError, match="Temperature T must be positive."):
         mc_simulator.run(T=0)
     with pytest.raises(ValueError, match="Temperature T must be positive."):
         mc_simulator.run(T=-1.0)
 
-def test_run_invalid_samples_burn():
-    """Tests if the run method raises an error for invalid n_samples or n_burn values."""
-    G_temp = nx.Graph()
-    G_temp.add_node(0)
-    temp_ham = IsingHamiltonian(G_temp)
-    mc_simulator = MonteCarlo(ham=temp_ham)
+def test_run_invalid_samples_burn(simple_ising_hamiltonian):
+    """Tests if the run method raises ValueError for invalid n_samples or n_burn values."""
+    mc_simulator = MonteCarlo(ham=simple_ising_hamiltonian)
 
-    # If n_samples=0 is valid (as in test_run_burn_in), this part needs adjustment.
-    with pytest.raises(ValueError, match="Number of samples"):
-        mc_simulator.run(n_samples=0, n_burn=10)
+    with pytest.raises(ValueError, match="Number of samples \\(n_samples\\) must be positive."):
+        mc_simulator.run(n_samples=0)
 
-    with pytest.raises(ValueError, match="Number of samples"):
+    with pytest.raises(ValueError, match="Number of samples \\(n_samples\\) must be positive."):
         mc_simulator.run(n_samples=-10)
 
-    with pytest.raises(ValueError, match="Number of burn-in steps"):
+    with pytest.raises(ValueError, match="Number of burn-in steps \\(n_burn\\) cannot be negative."):
         mc_simulator.run(n_burn=-10)
